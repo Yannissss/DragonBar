@@ -93,7 +93,9 @@ int main(int argc, char const *argv[])
 	printf("{ \"version\": 1 } \n");
 	printf("[ \n");
 	printf("[] \n");
-
+	// Flush output stream
+	fflush(stdout);
+	
     // Update loop
     struct tm * now;
 	time_t secondsSinceEpoch;
@@ -119,12 +121,13 @@ int main(int argc, char const *argv[])
 
 		// Getting volume
 		cmd = exec(132, "pactl list sinks | grep \"Volume: f\"" );
-        char * volume = "";
+		char * volume = "";
 		volume = split(cmd, 4);
 
 		// Render
-		printf(",[{\"full_text\":\" %3.1f Ko/s  %s   %s  %s  %s \"}] \n", bandwidth, volume, used, date, time);
-
+		printf(",[{\"full_text\":\" %3.1f Ko/s   %s   %s  %s  %s \"}] \n", bandwidth, volume, used, date, time);
+		// Flush output stream
+		fflush(stdout);
 		// Free mem
 		usleep(SLEEP_INTERVAL * 1000);
     }
