@@ -19,32 +19,47 @@
 /*
  *   Helpers
  */
-char * exec(size_t len, char * cmd)
+void exec(char * source, size_t len, char * cmd)
 {
     FILE * fp;
     fp = popen(cmd, "r");
     char * buffer = malloc(len * sizeof(char));
     while (fgets(buffer, len - 1, fp) != NULL);
     pclose(fp);
-    return buffer;
+	strcpy(source, buffer);
+	free(buffer);
 }
 
-char * split(char * source, int index)
+
+void query(char * dest, char * cmd, size_t len, int index)
 {
-	char * buffer = strdup(source);
-	char * arr_buffer[32];
-	int i = 0;
-	char * token;
-	while ((token = strsep(&buffer, " ")) != NULL)
+	// Executing command & storing it in a buffer
+	char * buffer = malloc(len * sizeof(char));
+	exec(buffer, len, cmd);
+	
+	// Duplicating the string & creating two pointers in order two free it later
+	char * str = strdup(buffer);
+	int pos = -1;	
+	char * token = str, * buff = str;
+	while (token != NULL)
 	{
+		// Point forwards next token
+		strsep(&buff, " ");
 		if (strcmp(token, "") != 0)
-		{
-				  arr_buffer[i] = strdup(token);
-				  i++;
+			pos++;
+		if (pos >= index)
+		{	
+			// Copy string when on right index
+			strcpy(dest, token);
+			break;
 		}
+		token = buff;
 	}
-	return arr_buffer[index];
+	// Freeing buffers
+	free(buffer);
+	free(str);
 }
+
 
 // Time utils
 unsigned long long millis()
@@ -59,11 +74,10 @@ unsigned long long millis()
     return millisecondsSinceEpoch;
 }
 
-
 /*
  * Net mutex
  */
-float bandwidth;
+float bandwidth = 0;
 pthread_mutex_t lock;
 
 /*
@@ -96,9 +110,6 @@ void * netinfo(void * arg)
 	}
 }
 
-
-
-
 int main(int argc, char const *argv[])
 {
 	// Setting up locale
@@ -119,40 +130,39 @@ int main(int argc, char const *argv[])
     // Update loop
     unsigned long long T1 = 0;
     unsigned long DELTA_TIME;
-	struct tm * now;
+	struct tm now;
 	time_t secondsSinceEpoch;
+	int SLEEP_SCHEDULED;
+
+	// Info variables
 	while (1)
     {
 		// Start update
 		T1 = millis();
+		
+		// Stats array
+		char date[64]      = "";
+		char clock[16]     = "";
+	    char freespace[16] = "";
+		char volume[16]    = "";
+		char meta[132]     = "";
+		char song[64]      = "";
 
 		// Getting time		
 		time(&secondsSinceEpoch);
-		now = localtime(&secondsSinceEpoch);
+		now = *localtime(&secondsSinceEpoch);
 		
-		char date[64] = "";
-		char time[16] = "";
-
-		strftime(date, 64, "%a %d %B", now);
-		strftime(time, 16, "%H:%M", now);
-
-		// Command buffer
-		char * cmd = "";
+		strftime(date, 64, "%a %d %B", &now);
+		strftime(clock, 16, "%H:%M", &now);
 
 		// Getting disk space
-		cmd = exec(256, "df -h " MAIN_DRIVE);
-		char * used = "";
-		used = split(cmd, 3);
+		query(freespace, "df -h " MAIN_DRIVE, 256, 3);
 
 		// Getting volume
-		cmd = exec(132, "pactl list sinks | grep \"Volume: f\"" );
-		char * volume = "";
-		volume = split(cmd, 4);
-		
+		query(volume, "pactl list sinks | grep \"Volume: f\"", 256, 4);
+
 		// Getting song info
-		char meta[132] = "";
-	    char song[64] = "";
-		strcpy(meta, exec(132, "mpc current -f \"%artist% - %title%\""));
+		exec(meta, 132, "mpc current -f \"%artist% - %title%\"");
 		meta[strlen(meta) - 1] = '\0';
 		if (strlen(meta) > SONG_MAX_WIDTH )
 		{
@@ -163,18 +173,20 @@ int main(int argc, char const *argv[])
 			for (int i = 0;i < SONG_MAX_WIDTH; i++)
 				song[i] = buffer[ (pos_start + i) % strlen(buffer) ];
 		}
+		else if (strlen(meta) < 6)
+			strcpy(song, "");
 		else
 			strcpy(song, meta);
 		
 		// Render
-		printf(",[{\"full_text\":\"%s  %3.1f Ko/s   %s   %s  %s  %s \"}] \n", song, bandwidth, volume, used, date, time);
-
+		printf(",[{\"full_text\":\"%s  %3.1f Ko/s   %s   %s  %s  %s \"}] \n", song, bandwidth, volume, freespace, date, clock);
+		
 		// Flush output stream
 		fflush(stdout);
 
         // End update & sleep until next update
         DELTA_TIME = (unsigned long) millis() - T1;
-        int SLEEP_SCHEDULED = SLEEP_INTERVAL - DELTA_TIME;
+        SLEEP_SCHEDULED = SLEEP_INTERVAL - DELTA_TIME;
         if (SLEEP_SCHEDULED > 0)
             usleep(SLEEP_SCHEDULED * 1000);
     }
