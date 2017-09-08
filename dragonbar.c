@@ -159,7 +159,7 @@ int main(int argc, char const *argv[])
 		query(freespace, "df -h " MAIN_DRIVE, 256, 3);
 
 		// Getting volume
-		query(volume, "pactl list sinks | grep \"Volume: f\"", 256, 4);
+		query(volume, "pactl list sinks | grep \"Volume :\"", 256, 4);
 
 		// Getting song info
 		exec(meta, 132, "mpc current -f \"%artist% - %title%\"");
