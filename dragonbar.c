@@ -12,7 +12,7 @@
 // Configuration
 #define SLEEP_INTERVAL 250 // in milliseconds
 #define SONG_SPEED     2 // in letters per seconds 
-#define SONG_MAX_WIDTH 40
+#define SONG_MAX_WIDTH 64
 #define MAIN_DRIVE     "/dev/sda2"
 #define INTERFACE      "wlp2s0"
 
@@ -113,7 +113,7 @@ void * netinfo(void * arg)
 int main(int argc, char const *argv[])
 {
 	// Setting up locale
-	setlocale(LC_TIME, "fr_FR.UTF-8");
+	setlocale(LC_ALL, "fr_FR.UTF-8");
 
 	// Start netinfo thread
 	assert(pthread_mutex_init(&lock, NULL) == 0);
@@ -146,7 +146,7 @@ int main(int argc, char const *argv[])
 	    char freespace[16] = "";
 		char volume[16]    = "";
 		char meta[132]     = "";
-		char song[64]      = "";
+		char song[SONG_MAX_WIDTH + 5]      = "";
 
 		// Getting time		
 		time(&secondsSinceEpoch);
@@ -179,8 +179,8 @@ int main(int argc, char const *argv[])
 			strcpy(song, meta);
 		
 		// Render
-		printf(",[{\"full_text\":\"%s  %3.1f Ko/s   %s   %s  %s  %s \"}] \n", song, bandwidth, volume, freespace, date, clock);
-		
+		printf(",[{\"full_text\":\"%s   %3.1f Ko/s   %s   %s  %s  %s \"}] \n", song, bandwidth, volume, freespace, date, clock);
+
 		// Flush output stream
 		fflush(stdout);
 
