@@ -9,7 +9,7 @@ run: all
 	@./dragonbar
 
 debug: all
-	@gdb -q ./dragonbar
+	@gdb -q dragonbar
 
 valgrind: all
 	@valgrind --leak-check=yes ./dragonbar
