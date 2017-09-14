@@ -12,8 +12,11 @@ debug: all
 	@gdb -q ./dragonbar
 
 valgrind: all
-	@ valgrind --leak-check=yes ./dragonbar
+	@valgrind --leak-check=yes ./dragonbar
 
+release:
+	@rm -rf dragonbar
+	@$(CC) -Wall -O3 $(LDFLAGS) dragonbar.c -o dragonbar	
 all: dragonbar
 
 dragonbar: dragonbar.c
