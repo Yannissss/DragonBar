@@ -113,7 +113,7 @@ void * netinfo(void * arg)
 int main(int argc, char const *argv[])
 {
 	// Setting up locale
-	setlocale(LC_ALL, "fr_FR.UTF-8");
+	setlocale(LC_TIME, "fr_FR.UTF-8");
 
 	// Start netinfo thread
 	assert(pthread_mutex_init(&lock, NULL) == 0);
