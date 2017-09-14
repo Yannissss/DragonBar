@@ -179,7 +179,7 @@ int main(int argc, char const *argv[])
 			strcpy(song, meta);
 		
 		// Render
-		printf(",[{\"full_text\":\"%s   %3.1f Ko/s   %s   %s  %s  %s \"}] \n", \ 
+		printf(",[{\"full_text\":\"%s   %3.1f Ko/s   %s   %s  %s  %s \"}] \n",
 		song, bandwidth, volume, freespace, date, clock);
 
 		// Flush output stream
