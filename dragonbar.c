@@ -88,7 +88,6 @@ void * netinfo(void * arg)
 	while(1)
 	{
 		FILE * fp;
-		char * buffer = malloc(64 * sizeof(char));
 		fp = fopen("/sys/class/net/wlp2s0/statistics/rx_bytes", "r");
 		
 		// Calculate current download bandwidth
@@ -101,7 +100,6 @@ void * netinfo(void * arg)
 		float rx_end = 0;
         fscanf(fp, "%f", &rx_end);
         fclose(fp);
-		free(buffer);
 
 		// Modify bandiwidth
 		pthread_mutex_lock(&lock);
@@ -113,7 +111,7 @@ void * netinfo(void * arg)
 int main(int argc, char const *argv[])
 {
 	// Setting up locale
-	setlocale(LC_TIME, "fr_FR.UTF-8");
+	setlocale(LC_ALL, "fr_FR.UTF-8");
 
 	// Start netinfo thread
 	assert(pthread_mutex_init(&lock, NULL) == 0);
@@ -156,7 +154,14 @@ int main(int argc, char const *argv[])
 		strftime(clock, 16, "%H:%M", &now);
 
 		// Getting disk space
-		query(freespace, "df -h " MAIN_DRIVE, 256, 3);
+		char totalspace[16];
+		query(totalspace, "df -h " MAIN_DRIVE, 256, 1);
+		query(freespace, "df -h " MAIN_DRIVE, 256, 2);
+		float total, used;
+		char * pend;
+		total = strtof(totalspace, &pend);
+		char * send;
+		used = strtof(freespace, &send);
 
 		// Getting volume
 		query(volume, "pactl list sinks | grep \"Volume :\"", 256, 4);
@@ -179,8 +184,8 @@ int main(int argc, char const *argv[])
 			strcpy(song, meta);
 		
 		// Render
-		printf(",[{\"full_text\":\"%s   %3.1f Ko/s   %s   %s  %s  %s \"}] \n",
-		song, bandwidth, volume, freespace, date, clock);
+		printf(",[{\"full_text\":\"%s   %3.1f Ko/s   %s   %3.1fG  %s  %s \"}] \n",
+		song, bandwidth, volume, (total - used), date, clock);
 
 		// Flush output stream
 		fflush(stdout);
